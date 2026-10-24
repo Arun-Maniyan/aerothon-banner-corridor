@@ -1,0 +1,169 @@
+<?xml version="1.0" ?>
+<!--
+  AeroTHON 2026 - Banner + Corridor world (ArduPilot SITL / Gazebo Harmonic)
+
+  Frames: Gazebo X = East, Y = North (ArduPilot local NED: N = Y, E = X).
+  The drone spawns at the origin facing North (yaw 90 deg in Gazebo = heading 0).
+
+  Layout (metres):
+    Drone start ............ (E 0.0,  N 0.0)
+    Banner centre .......... (E -7.4, N 2.0)   2 m ahead; 11.5 ft x 1 ft (3.5052 x 0.3048), #00B140
+                                               Placed so the downward camera at 5 m first reads
+                                               the text after ~3 m of LEFT (West) sway.
+    Corridor ............... centred on E -7.4, from N 2.75 to N 12.75 (10 m long)
+                             inner width 11.5 ft (3.5052 m), walls/roof 3.5 m high
+                             (mouth starts 0.6 m past the banner's far edge so the drone's
+                              front rotors clear the roof edge while descending 5 m -> 3 m)
+
+  To MOVE the banner (e.g. to make detection happen earlier/later), change the X of
+  "aerothon_banner" AND of the three corridor models below by the same amount.
+  Rule of thumb at 5 m: first detection sway ~= (-banner_X - 4.45) m.
+  To make the corridor open-topped, delete the "corridor_roof" model.
+-->
+<sdf version="1.9">
+  <world name="aerothon_banner_corridor">
+    <physics name="1ms" type="ignore">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+
+    <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"/>
+    <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+    <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"/>
+    <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
+    <plugin filename="gz-sim-imu-system" name="gz::sim::systems::Imu"/>
+    <plugin filename="gz-sim-navsat-system" name="gz::sim::systems::NavSat"/>
+
+    <scene>
+      <ambient>0.8 0.8 0.8 1.0</ambient>
+      <background>0.7 0.85 1.0 1.0</background>
+      <sky></sky>
+    </scene>
+
+    <!-- Same SITL home as the original repo world -->
+    <spherical_coordinates>
+      <latitude_deg>-35.363262</latitude_deg>
+      <longitude_deg>149.165237</longitude_deg>
+      <elevation>584</elevation>
+      <heading_deg>0</heading_deg>
+      <surface_model>EARTH_WGS84</surface_model>
+    </spherical_coordinates>
+
+    <light type="directional" name="sun">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 40 0 0 0</pose>
+      <diffuse>0.9 0.9 0.9 1</diffuse>
+      <specular>0.3 0.3 0.3 1</specular>
+      <direction>-0.4 0.2 -1.0</direction>
+    </light>
+
+    <!-- Grey asphalt ground (deliberately NOT green, so the green mask only sees the banner) -->
+    <model name="ground">
+      <static>true</static>
+      <link name="ground_link">
+        <collision name="collision">
+          <pose>0 0 -0.05 0 0 0</pose>
+          <geometry><box><size>60 60 0.1</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <plane><normal>0 0 1</normal><size>60 60</size></plane>
+          </geometry>
+          <material>
+            <ambient>0.40 0.40 0.42 1</ambient>
+            <diffuse>0.45 0.45 0.47 1</diffuse>
+            <specular>0.05 0.05 0.05 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Takeoff pad marker at the origin (dark grey) -->
+    <model name="takeoff_pad">
+      <static>true</static>
+      <link name="pad_link">
+        <visual name="pad_surface">
+          <pose>0 0 0.001 0 0 0</pose>
+          <geometry>
+            <plane><normal>0 0 1</normal><size>1.5 1.5</size></plane>
+          </geometry>
+          <material>
+            <ambient>0.20 0.20 0.22 1</ambient>
+            <diffuse>0.25 0.25 0.28 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- GREEN BANNER #00B140, 11.5 ft x 1 ft, long side East-West across the corridor mouth -->
+    <include>
+      <uri>model://aerothon_banner</uri>
+      <name>aerothon_banner</name>
+      <pose>-7.4 2.0 0 0 0 0</pose>
+    </include>
+
+    <!-- CORRIDOR: inner width 3.5052 m (11.5 ft), length 10 m, height 3.5 m -->
+    <!-- West wall: inner face at X = -7.4 - 1.7526, 0.15 m thick -->
+    <model name="corridor_wall_west">
+      <static>true</static>
+      <pose>-9.2276 7.75 1.75 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>0.15 10 3.5</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>0.15 10 3.5</size></box></geometry>
+          <material>
+            <ambient>0.70 0.68 0.65 1</ambient>
+            <diffuse>0.75 0.73 0.70 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- East wall: inner face at X = -7.4 + 1.7526 -->
+    <model name="corridor_wall_east">
+      <static>true</static>
+      <pose>-5.5724 7.75 1.75 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>0.15 10 3.5</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>0.15 10 3.5</size></box></geometry>
+          <material>
+            <ambient>0.70 0.68 0.65 1</ambient>
+            <diffuse>0.75 0.73 0.70 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Roof: underside at 3.5 m -->
+    <model name="corridor_roof">
+      <static>true</static>
+      <pose>-7.4 7.75 3.55 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>3.8052 10 0.1</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>3.8052 10 0.1</size></box></geometry>
+          <material>
+            <ambient>0.55 0.55 0.58 1</ambient>
+            <diffuse>0.60 0.60 0.63 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Drone (repo model: iris + ArduPilotPlugin + downward camera on /camera/image_raw) -->
+    <include>
+      <uri>model://iris_with_ardupilot_camera</uri>
+      <name>iris_with_ardupilot_camera</name>
+      <pose degrees="true">0 0 0.195 0 0 90</pose>
+    </include>
+  </world>
+</sdf>
